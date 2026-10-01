@@ -1,0 +1,4 @@
+# Backend Dependencies
+# Versi dibuat fleksibel untuk menghindari konflik di environment deployment Render
+
+openpyxl>=3.0.0

@@ -1,0 +1,58 @@
+Project Description: Demand Planning & Forecast Accuracy Dashboard
+
+1. Ringkasan Proyek
+Proyek ini bertujuan untuk membangun dashboard analitik pemantauan akurasi Rolling Forecast (RF) terhadap data aktual penjualan (actual sales). Dashboard ini dirancang untuk memberikan visibilitas performa perencanaan berbasis volume (MAPE) dan dampak finansial langsung (WAPE/WAFE berbasis Margin Profit) dengan segmentasi portofolio produk yang terstruktur.
+
+2. Sumber Data & Persiapan Data (Data Preparation)
+
+Master Data Mapping: Standardisasi master SKU dengan memetakan seluruh product_code lama ke product_code aktif saat ini guna menjaga konsistensi perbandingan historis.
+
+Master Margin/Harga Dasar: Menyediakan base price/margin per SKU untuk valuasi finansial RF.
+
+Data Aktual & Rolling Forecast (RF): Mengintegrasikan data aktual penjualan YTD 2026 dan data RF yang dilengkapi atribut MTM FLAG (Y untuk Made-to-Order/Make-to-Measure dan N untuk Non-MTM / Make-to-Stock).
+
+3. Segmentasi & Klasifikasi Produk (Pareto Logic)
+
+Klasifikasi produk dilakukan secara terpisah untuk kategori MTM dan Non-MTM berdasarkan kontribusi nilai penjualan YTD 2026:
+
+MTM - Pareto (Top 80% Value): SKU MTM kontributor utama pendapatan.
+
+MTM - Non-Pareto (Bottom 20% Value): SKU MTM ekor panjang (long-tail).
+
+Non-MTM - Pareto (Top 80% Value): SKU reguler bervolume tinggi dengan risiko stockout kritis.
+
+Non-MTM - Non-Pareto (Bottom 20% Value): SKU reguler slow-moving.
+
+4. Metrik & Rumusan Akurasi
+
+Dashboard mengukur deviasi antara Actual dan Forecast (RF) menggunakan dua metode:
+
+MAPE (Mean Absolute Percentage Error):
+
+MAPE= 
+n
+1
+​
+ ∑( 
+Actual Qty
+∣Actual Qty−RF Qty∣
+​
+ )×100%
+MAPE Accuracy=100%−MAPE
+WAFE / WAPE Berbobot Margin Profit (Rp):
+Pembobotan menggunakan nilai profit rupiah dari RF:
+
+Margin Profit (Rp)=RF Qty×Harga Dasar
+WAFE= 
+∑(RF Qty×Harga Dasar)
+∑(∣Actual Qty−RF Qty∣×Harga Dasar)
+​
+ ×100%
+WAFE Accuracy=100%−WAFE
+5. Struktur Tampilan & Deliverables Dashboard
+
+Modul Dashboard	Elemen & KPI Utama
+Executive Summary	Total Forecast Accuracy (MAPE vs WAFE Margin), Total Bias (Under/Over Forecast), Total Value at Risk (Rp).
+Matrix Performance	Matriks akurasi per 4 kuadran: (1) MTM Pareto, (2) MTM Non-Pareto, (3) Non-MTM Pareto, (4) Non-MTM Non-Pareto.
+Deep-Dive SKU Level	Tabel detail SKU: Old vs New Code, Actual Qty, RF Qty, Error Qty, Margin/Base Price, Absolute Error Margin (Rp), Status Deviasi.
+Trend & Gap Analysis	Grafik tren akurasi bulanan per kategori MTM/Non-MTM untuk memantau peningkatan kapabilitas demand planner.

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demand Planning & Forecast Accuracy Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-title">
+        <h1><i class="fa-solid fa-chart-pie"></i> Demand Planning Dashboard</h1>
+        <p>Akurasi Rolling Forecast vs Actual Sales (Pareto per GB MTM & Non-MTM)</p>
+      </div>
+      <div class="header-actions">
+        <select class="filter-select" id="filter-period-global">
+          <option value="">Semua Periode (YTD)</option>
+        </select>
+        <select class="filter-select" id="filter-gb-global">
+          <option value="">Semua Group Barang (GB)</option>
+        </select>
+        <div class="status-badge">
+          <span class="status-dot"></span>
+          <span id="api-status">Connecting to Backend API...</span>
+        </div>
+        <button class="btn-primary" id="btn-refresh">
+          <i class="fa-solid fa-rotate"></i> Reprocess Data
+        </button>
+      </div>
+    </header>
+
+    <!-- KPI Summary Cards -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span>WAFE ACCURACY (MARGIN RP)</span>
+          <div class="kpi-icon icon-blue"><i class="fa-solid fa-coins"></i></div>
+        </div>
+        <div class="kpi-value" id="kpi-wafe">--%</div>
+        <div class="kpi-subtitle">Akurasi berbobot Margin Profit Rupiah</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span>MAPE ACCURACY (VOLUME)</span>
+          <div class="kpi-icon icon-purple"><i class="fa-solid fa-cubes"></i></div>
+        </div>
+        <div class="kpi-value" id="kpi-mape">--%</div>
+        <div class="kpi-subtitle">Akurasi rata-rata persentase volume</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span>TOTAL BIAS QTY</span>
+          <div class="kpi-icon icon-amber"><i class="fa-solid fa-scale-unbalanced"></i></div>
+        </div>
+        <div class="kpi-value" id="kpi-bias">-- Qty</div>
+        <div class="kpi-subtitle" id="bias-label">Over/Under Forecast</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-header">
+          <span>VALUE AT RISK (RP)</span>
+          <div class="kpi-icon icon-rose"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        </div>
+        <div class="kpi-value" id="kpi-var">Rp --</div>
+        <div class="kpi-subtitle">Total estimasi potensi risiko finansial error</div>
+      </div>
+    </section>
+
+    <!-- Matrix 4-Kuadran Pareto per GB -->
+    <section>
+      <h2 class="section-title"><i class="fa-solid fa-table-cells-large"></i> Matriks Pareto 4-Kuadran (Hitung Per GB MTM & Non-MTM)</h2>
+      <div class="matrix-grid" id="matrix-container">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+    <!-- Ringkasan Total Agregat MTM/Non-MTM & Pareto/Non-Pareto -->
+    <section style="margin-top: -10px; margin-bottom: 32px;">
+      <h2 class="section-title" style="font-size: 1.1rem; color: var(--text-muted);"><i class="fa-solid fa-layer-group"></i> Total Agregat MTM vs NON-MTM & Total Pareto vs Non-Pareto</h2>
+      <div class="kpi-grid" id="totals-container">
+        <!-- Rendered via JS -->
+      </div>
+    </section>
+
+    <!-- Monthly Trend Chart -->
+    <section class="chart-container">
+      <h2 class="section-title"><i class="fa-solid fa-chart-line"></i> Tren Akurasi Per Periode Bulanan (Margin Rp % vs Volume Qty %)</h2>
+      <div class="chart-wrapper">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </section>
+
+    <!-- SKU Deep Dive Table -->
+    <section class="table-section">
+      <div class="table-controls">
+        <h2 class="section-title" style="margin-bottom:0;"><i class="fa-solid fa-list-check"></i> Deep-Dive SKU Level</h2>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="search-sku" placeholder="Cari Kode atau Nama SKU...">
+          </div>
+          <select class="filter-select" id="filter-quadrant">
+            <option value="">Semua Kuadran</option>
+            <option value="MTM - Pareto">MTM - Pareto</option>
+            <option value="MTM - Non-Pareto">MTM - Non-Pareto</option>
+            <option value="Non-MTM - Pareto">Non-MTM - Pareto</option>
+            <option value="Non-MTM - Non-Pareto">Non-MTM - Non-Pareto</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Kode SKU</th>
+              <th>Nama Produk</th>
+              <th>GB</th>
+              <th>Kuadran</th>
+              <th class="text-right">Harga Dasar (Rp)</th>
+              <th class="text-right">Actual Qty</th>
+              <th class="text-right">RF Qty</th>
+              <th class="text-right">Error Qty</th>
+              <th class="text-right">Error Margin (Rp)</th>
+              <th class="text-right">MAPE Error %</th>
+              <th class="text-right">MAPE Accuracy %</th>
+            </tr>
+          </thead>
+          <tbody id="sku-table-body">
+            <tr>
+              <td colspan="11" style="text-align:center; color: var(--text-muted);">Memuat data SKU...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+# Agent Operating Guide
+Intstruksi ini membantu mengubah prompt manusia menjadi system yang reliabel dan repeatable.
+
+AI bisa menebak.
+Sistem ini didesain untuk mengatur perilaku
+
+# Bagaimana proyek ini bekerja
+Ada 3 file penting:
+- instructions.txt -> Mendefinisikan bagaimana system harus bekerja
+- project_specs.md -> Mendefinisikan apa yang sedang kita buat
+- implementation-plan.md -> Mendefinisikan rencana kerja per fase dan melacak fase yang sedang berjalan
+
+Agent harus mengikuti ketiga file ini.
+
+# Step 1: Definisikan proyek ini dulu
+Sebelum menulis kode, Anda harus:
+1. Buat file yang dinamakan project_specs.md
+2. Definisikan dengan jelas:
+- Apa yang user bisa gunakan sebagai input
+- Apa workflow yang sudah ada
+- Tools apa saja yang digunakan (Telegram, Gmail, Airtable, Supabase, dsb.)
+- Output yang diekspektasikan
+- Di mana data akan disimpan
+- Di mana system ini akan di-deploy
+- Seperti apa proyek yang selesai
+3. Tunjukkan file-nya
+4. Tunggu approval user
+
+# Bagaimana struktur dari Agen 
+## Bagaimana ini bekerja (simple)
+- **Instructions** = apa yang akan dibuat, hanya berupa teks saja (di folder instructions/)
+- **Decisions** = pilih workflow yang tepat berdasarkan message yang diterima
+- **Actions** = Kode-nya (python scripts di folder executions/)
+
+# File structure
+Untuk mengerjakan frontend, kerjakan di folder frontend/
+Untuk mengerjakan backend, kerjakan di folder backend/
+
+# Aturan development
+
+## Aturan 1: Selalu baca dulu!
+Selalu baca:
+- instructions.txt
+- project_specs.md
+- implementation-plan.md
+
+Agent WAJIB membaca file implementation-plan.md ini sebelum melakukan tindakan apa pun sebagai penanda kita sudah sampai di fase mana.
+
+
+## Aturan 2: Hanya pakai Typescript dan Python
+Semua scripts backend harus ditulis menggunakan Bahasa python.
+Semua scripts frontend harus ditulis menggunakan Bahasa TypeScript
+
+## Aturan 3: Semua workflow punya 2 tipe file
+Semua workflow backend harus termasuk:
+- Markdown file di folder 'backend-instructions/'
+- Python files (bisa lebih dari satu) yang matching dengan markdown-nya di folder 'backend/'
+Jangan running kode-nya kalau 2 tipe files ini belum ada.
+
+## Aturan 4: Selalu cek versi node dan python
+Cek versi node dan python sebelum melakukan instalasi library.
+Jangan ubah versi node dan python.
+Apabila memerlukan library, cari library yang kompatibel dengan versi node dan python-nya.
+
+Semua workflow frontend harus termasuk:
+- Markdown file di folder 'frontend-instructions/'
+- Files (mungkin typescript, javascript, dan lain-lain) yang matching dengan markdown-nya di folder 'frontend/'
+Jangan running kode-nya kalau 2 tipe files ini belum ada.
+
+Apabila Anda melakukan tes sebuah fase dalam implementation plan dan user sudah setuju bahwa tes-nya berhasil, maka tandai fase tersebut telah selesai di file implementation-plan.md
+
+
+## Aturan 4: Buat kode dalam batch kecil-kecil
+Jangan buat semua kode secara langsung.
+
+Tapi lakukan:
+1. Buat 1 bagian kecil
+2. Tes secara local
+3. Konfirmasi kalau kode-nya sudah jalan
+4. Lalu lanjut ke bagian selanjutnya
+5. Hanya sambungkan bagian-bagian ini kalau masing-masing bagian sudah bekerja dengan baik
+
+## Aturan 5: Checklist deployment
+Sebelum deploy:
+1. Tes kodenya secara local
+2. Pastikan semua secret key ada di file .env
+3. Tunjukkan command untuk deploy-nya
+4. Tunggu approval
+5. Deploy
+6. Tes versi live-nya
+7. Konfirmasi kalau sudah bekerja end-to-end
+
+# Apabila ada yang error atau break
+1. Perbaiki problem-nya
+2. Perbaiki script-nya supaya problem yang sama tidak terjadi lagi.
+3. Tes lagi
+4. Update instruction-nya kalau diperlukan
+
+Error adalah feedback.
+Perbaikan dari error seharusnya membuat system ini lebih kuat.
+
+# Format respon
+Saat menjawab message, selalu gunakan:
+- *Plan* -> 3-7 bullet points
+- *What I need form you* (kalau ada)
+- *Action selanjutnya* (satu Langkah yang jelas)
+- *Errors* (jelaskan dengan singkat dengan Bahasa yang mudah dimengerti)
+
+# Core principle
+Definisikan dengan jelas
+Buat dengan step kecil-kecil
+Tes sebelum move on ke step selanjutnya
+
+Sistem yang reliabel dibuat dengan intention yang jelas. 
+

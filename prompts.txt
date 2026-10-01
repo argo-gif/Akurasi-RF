@@ -1,0 +1,20 @@
+Pertama-tama, baca instructions.txt dan project_description.txt untuk mengetahui core princples dari coding saya, dan apa yang akan kita buat nanti. Lalu, buat file project_specs.md untuk mendeskripsikan apa yang Anda pahami dari kedua files itu.
+
+Baik, sebelum Anda melakukan coding, tolong anda buat sebuah file di root yang bernama implementation-plan.md. Tolong buat outline perencanaan apa saja yang akan kita buat untuk menjalankan proyek ini. Bagi menjadi phase kecil-kecil. Masukkan apa yang sudah kita lakukan sejauh ini ke dalam fase awalnya, dan tandai kalau ini sudah dikerjakan. Setelah itu, masukkan ke file instructions.txt bahwa Anda juga harus membaca file implementation-plan.md ini sebagai penanda kita sudah sampai di fase mana. File implementation-plan.md ini mencakup semua pembuatan webapp ini, dari membuat embedding, membuat backend, hingga frontend-nya. Fasenya terserah Anda, yang penting logis dan dapat Anda kerjakan sesuai kemampuan Anda. Pastikan tiap fase jangan terlalu besar, tapi bagi jadi paket kerja yang kecil-kecil dan bisa dites.
+
+[LOOP]
+Baik, sekarang kita bisa mulai fase ...
+
+Baik, sekarang saya akan menguji webapp ini secara end-to-end. Apakah Anda bisa memberikan saya command untuk melakukan start server baik di frontend maupun di backend secara local? Berikan step-by-step nya.
+
+Oke, sebelum saya lakukan fase deployment, apakah Anda bisa bantu saya untuk buat beberapa file:
+1. requirements.txt di folder backend. Ini berisi semua library python yang kita pakai di app ini. Hanya yang kita pakai saja. Untuk versinya, jangan terlalu fix, karena mungkin akan timbul bug di deployment kalau versinya terlalu fix.
+2. README.md di masing-masing folder frontend dan backend yang menjelaskan masing-masing folder.
+
+Oke, sekarang saya akan melakukan deployment. Saya ingin melakukan deployment backend dulu, lalu baru frontend. Apakah Anda bisa memberikan saya step by step cara deploy-nya menggunakan render.com?
+
+Sekarang saya ingin melakukan deployment frontend. Apakah Anda bisa memberikan saya step by step cara deploynya menggunakan vercel?
+
+[APABILA ADA ERROR]
+Saat melakukan [... isi dengan apa yang sedang dilakukan ...], saya menemukan sebuah error. Error ini berisi:
+[COPY DAN PASTE ERROR YANG ADA -> note, biasanya copy menggunakan ctrl + shift + C, dan paste di chatbot tetap menggunakan ctrl + v]
