@@ -57,7 +57,7 @@ async function initDashboard(forceReprocess = false) {
       statusElem.innerText = "API Backend Connected";
 
       if (data.periods) {
-        populateDropdown("filter-period-global", data.periods, "Semua Periode (YTD)");
+        populatePeriodDropdown("filter-period-global", data.periods);
       }
       if (data.gbs) {
         populateDropdown("filter-gb-global", data.gbs, "Semua Group Barang (GB)");
@@ -73,6 +73,52 @@ async function initDashboard(forceReprocess = false) {
   } catch (err) {
     console.error("API Connection Failed:", err);
     statusElem.innerText = "Offline / Connection Failed";
+  }
+}
+
+function populatePeriodDropdown(elemId, periods) {
+  const elem = document.getElementById(elemId);
+  const currentVal = elem.value;
+  elem.innerHTML = "";
+
+  const optAll = document.createElement("option");
+  optAll.value = "";
+  optAll.innerText = "Semua Periode (2025 & 2026 YTD)";
+  elem.appendChild(optAll);
+
+  const yearMap = {};
+  periods.forEach(p => {
+    const y = p.split("-")[0];
+    if (!yearMap[y]) yearMap[y] = [];
+    yearMap[y].push(p);
+  });
+
+  const sortedYears = Object.keys(yearMap).sort();
+
+  const ogYear = document.createElement("optgroup");
+  ogYear.label = "📊 RINGKASAN TAHUNAN";
+  sortedYears.forEach(y => {
+    const opt = document.createElement("option");
+    opt.value = y;
+    opt.innerText = `Full Year ${y} (YTD ${y})`;
+    ogYear.appendChild(opt);
+  });
+  elem.appendChild(ogYear);
+
+  sortedYears.forEach(y => {
+    const og = document.createElement("optgroup");
+    og.label = `📅 PERIODE BULANAN TAHUN ${y}`;
+    yearMap[y].forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p;
+      opt.innerText = p;
+      og.appendChild(opt);
+    });
+    elem.appendChild(og);
+  });
+
+  if (currentVal) {
+    elem.value = currentVal;
   }
 }
 

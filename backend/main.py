@@ -27,6 +27,80 @@ def get_data(force_reprocess=False):
     return DATA_PAYLOAD
 
 
+def extract_sku_period_data(s, selected_period):
+    """
+    Helper untuk mengekstrak data periode untuk SKU s.
+    - jika selected_period None/kosong: kembalikan total YTD seluruh periode.
+    - jika selected_period 4 digit (cth: '2025' atau '2026'): akumulasikan seluruh bulan di tahun tersebut.
+    - jika selected_period spesifik (cth: '2025-01'): kembalikan data bulan tersebut.
+    """
+    if not selected_period:
+        rf_q = s.get("total_rf_qty", 0.0)
+        if rf_q == 0 and s.get("total_actual_qty", 0.0) == 0:
+            return None
+        return {
+            "rf_qty": rf_q,
+            "act_qty": s.get("total_actual_qty", 0.0),
+            "rf_val": s.get("total_rf_val", 0.0),
+            "act_val": s.get("actual_ytd_val", 0.0),
+            "error_val": s.get("total_error_val", 0.0),
+            "mape": s.get("overall_mape"),
+            "rf_mtm_y_val": s.get("rf_mtm_y_val", 0.0),
+            "act_mtm_y_val": s.get("act_mtm_y_val", 0.0),
+            "error_mtm_y_val": abs(s.get("act_mtm_y_val", 0.0) - s.get("rf_mtm_y_val", 0.0)),
+            "rf_mtm_n_val": s.get("rf_mtm_n_val", 0.0),
+            "act_mtm_n_val": s.get("act_mtm_n_val", 0.0),
+            "error_mtm_n_val": abs(s.get("act_mtm_n_val", 0.0) - s.get("rf_mtm_n_val", 0.0)),
+        }
+    elif len(selected_period) == 4 and selected_period.isdigit():
+        prefix = selected_period + "-"
+        matching = [p_data for p_name, p_data in s.get("periods", {}).items() if p_name.startswith(prefix)]
+        if not matching:
+            return None
+        rf_q = sum(p.get("rf_qty", 0.0) for p in matching)
+        act_q = sum(p.get("act_qty", 0.0) for p in matching)
+        if rf_q == 0 and act_q == 0:
+            return None
+        rf_v = sum(p.get("rf_val", 0.0) for p in matching)
+        act_v = sum(p.get("act_val", 0.0) for p in matching)
+        err_v = sum(p.get("error_val", 0.0) for p in matching)
+
+        rf_mtm_y_v = sum(p.get("rf_mtm_y_val", 0.0) for p in matching)
+        act_mtm_y_v = sum(p.get("act_mtm_y_val", 0.0) for p in matching)
+        err_mtm_y_v = sum(p.get("error_mtm_y_val", 0.0) for p in matching)
+
+        rf_mtm_n_v = sum(p.get("rf_mtm_n_val", 0.0) for p in matching)
+        act_mtm_n_v = sum(p.get("act_mtm_n_val", 0.0) for p in matching)
+        err_mtm_n_v = sum(p.get("error_mtm_n_val", 0.0) for p in matching)
+
+        mapes = [p.get("mape") for p in matching if p.get("mape") is not None]
+        avg_mape = round(sum(mapes) / len(mapes), 2) if mapes else None
+
+        return {
+            "rf_qty": rf_q,
+            "act_qty": act_q,
+            "rf_val": rf_v,
+            "act_val": act_v,
+            "error_val": err_v,
+            "mape": avg_mape,
+            "rf_mtm_y_val": rf_mtm_y_v,
+            "act_mtm_y_val": act_mtm_y_v,
+            "error_mtm_y_val": err_mtm_y_v,
+            "rf_mtm_n_val": rf_mtm_n_v,
+            "act_mtm_n_val": act_mtm_n_v,
+            "error_mtm_n_val": err_mtm_n_v,
+        }
+    else:
+        p_data = s.get("periods", {}).get(selected_period)
+        if not p_data:
+            return None
+        rf_q = p_data.get("rf_qty", 0.0)
+        act_q = p_data.get("act_qty", 0.0)
+        if rf_q == 0 and act_q == 0:
+            return None
+        return p_data
+
+
 class APIRequestHandler(BaseHTTPRequestHandler):
 
     def _set_headers(self, status=200, content_type="application/json"):
@@ -76,25 +150,16 @@ class APIRequestHandler(BaseHTTPRequestHandler):
                 valid_sku_count = 0
 
                 for s in skus:
-                    if selected_period:
-                        p_data = s["periods"].get(selected_period, {})
-                        rf_q = p_data.get("rf_qty", 0.0)
-                        if rf_q == 0:
-                            continue
-                        rf_v = p_data.get("rf_val", 0.0)
-                        act_v = p_data.get("act_val", 0.0)
-                        err_v = p_data.get("error_val", 0.0)
-                        bias_q = rf_q - p_data.get("act_qty", 0.0)
-                        mape_v = p_data.get("mape")
-                    else:
-                        rf_q = s["total_rf_qty"]
-                        if rf_q == 0:
-                            continue
-                        rf_v = s["total_rf_val"]
-                        act_v = s.get("actual_ytd_val", 0.0)
-                        err_v = s["total_error_val"]
-                        bias_q = rf_q - s["total_actual_qty"]
-                        mape_v = s["overall_mape"]
+                    p_data = extract_sku_period_data(s, selected_period)
+                    if not p_data:
+                        continue
+
+                    rf_q = p_data.get("rf_qty", 0.0)
+                    rf_v = p_data.get("rf_val", 0.0)
+                    act_v = p_data.get("act_val", 0.0)
+                    err_v = p_data.get("error_val", 0.0)
+                    bias_q = rf_q - p_data.get("act_qty", 0.0)
+                    mape_v = p_data.get("mape")
 
                     valid_sku_count += 1
                     rf_val_total += rf_v
@@ -149,47 +214,26 @@ class APIRequestHandler(BaseHTTPRequestHandler):
                     mape_list = []
 
                     for s in q_skus:
-                        if selected_period:
-                            p_data = s["periods"].get(selected_period, {})
-                            rf_q = p_data.get("rf_qty", 0.0)
-                            if rf_q == 0:
-                                continue
-                            if mode == "mtm":
-                                rf_v = p_data.get("rf_mtm_y_val", 0.0)
-                                act_v = p_data.get("act_mtm_y_val", 0.0)
-                                err_v = p_data.get("error_mtm_y_val", 0.0)
-                            elif mode == "non_mtm":
-                                rf_v = p_data.get("rf_mtm_n_val", 0.0)
-                                act_v = p_data.get("act_mtm_n_val", 0.0)
-                                err_v = p_data.get("error_mtm_n_val", 0.0)
-                            else:
-                                rf_v = p_data.get("rf_val", 0.0)
-                                act_v = p_data.get("act_val", 0.0)
-                                err_v = p_data.get("error_val", 0.0)
+                        p_data = extract_sku_period_data(s, selected_period)
+                        if not p_data:
+                            continue
 
-                            act_q = p_data.get("act_qty", 0.0)
-                            rf_q_val = p_data.get("rf_qty", 0.0)
-                            mape_v = (err_v / act_v * 100.0) if act_v > 0 else None
+                        if mode == "mtm":
+                            rf_v = p_data.get("rf_mtm_y_val", 0.0)
+                            act_v = p_data.get("act_mtm_y_val", 0.0)
+                            err_v = p_data.get("error_mtm_y_val", 0.0)
+                        elif mode == "non_mtm":
+                            rf_v = p_data.get("rf_mtm_n_val", 0.0)
+                            act_v = p_data.get("act_mtm_n_val", 0.0)
+                            err_v = p_data.get("error_mtm_n_val", 0.0)
                         else:
-                            rf_q = s["total_rf_qty"]
-                            if rf_q == 0:
-                                continue
-                            if mode == "mtm":
-                                rf_v = s.get("rf_mtm_y_val", 0.0)
-                                act_v = s.get("act_mtm_y_val", 0.0)
-                                err_v = abs(act_v - rf_v)
-                            elif mode == "non_mtm":
-                                rf_v = s.get("rf_mtm_n_val", 0.0)
-                                act_v = s.get("act_mtm_n_val", 0.0)
-                                err_v = abs(act_v - rf_v)
-                            else:
-                                rf_v = s["total_rf_val"]
-                                act_v = s.get("actual_ytd_val", 0.0)
-                                err_v = s["total_error_val"]
+                            rf_v = p_data.get("rf_val", 0.0)
+                            act_v = p_data.get("act_val", 0.0)
+                            err_v = p_data.get("error_val", 0.0)
 
-                            act_q = s["total_actual_qty"]
-                            rf_q_val = s["total_rf_qty"]
-                            mape_v = (err_v / act_v * 100.0) if act_v > 0 else None
+                        act_q = p_data.get("act_qty", 0.0)
+                        rf_q_val = p_data.get("rf_qty", 0.0)
+                        mape_v = (err_v / act_v * 100.0) if act_v > 0 else None
 
                         q_valid_count += 1
                         rf_val_total += rf_v
@@ -273,13 +317,9 @@ class APIRequestHandler(BaseHTTPRequestHandler):
                 skus = payload["skus"]
                 res_skus = []
                 for s in skus:
-                    if selected_period:
-                        p_data = s["periods"].get(selected_period, {})
-                        if p_data.get("rf_qty", 0.0) == 0:
-                            continue
-                    else:
-                        if s.get("total_rf_qty", 0.0) == 0:
-                            continue
+                    p_data = extract_sku_period_data(s, selected_period)
+                    if not p_data:
+                        continue
 
                     s_copy = dict(s)
                     if quadrant_filter and quadrant_filter.lower().startswith("mtm"):

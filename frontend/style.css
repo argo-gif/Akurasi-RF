@@ -350,6 +350,13 @@ body {
   color: var(--text-main);
 }
 
+.filter-select optgroup {
+  background: #0d1321;
+  color: var(--accent-cyan);
+  font-weight: 700;
+  font-style: normal;
+}
+
 .table-responsive {
   overflow-x: auto;
 }
