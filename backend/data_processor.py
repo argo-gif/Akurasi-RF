@@ -467,6 +467,7 @@ def process_demand_data(base_dir=".", force_reprocess=False):
         err_val_total = 0.0
         bias_qty_total = 0.0
         mape_list = []
+        valid_sku_count = 0
 
         for s in skus_subset:
             if period_filter:
@@ -491,6 +492,7 @@ def process_demand_data(base_dir=".", force_reprocess=False):
                 bias_q = rf_q - s["total_actual_qty"]
                 mape_v = s["overall_mape"]
 
+            valid_sku_count += 1
             rf_val_total += rf_v
             act_val_total += act_v
             err_val_total += err_v
