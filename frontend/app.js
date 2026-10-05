@@ -28,6 +28,13 @@ document.addEventListener("DOMContentLoaded", () => {
     initDashboard(true);
   });
 
+  document.getElementById("filter-year-global").addEventListener("change", () => {
+    updatePeriodOptions();
+    loadSummary();
+    loadMatrix();
+    filterAndRenderSKUs();
+  });
+
   document.getElementById("filter-period-global").addEventListener("change", () => {
     loadSummary();
     loadMatrix();
@@ -57,7 +64,9 @@ async function initDashboard(forceReprocess = false) {
       statusElem.innerText = "API Backend Connected";
 
       if (data.periods) {
-        populatePeriodDropdown("filter-period-global", data.periods);
+        availablePeriods = data.periods;
+        populateYearDropdown(data.periods);
+        updatePeriodOptions();
       }
       if (data.gbs) {
         populateDropdown("filter-gb-global", data.gbs, "Semua Group Barang (GB)");
@@ -76,49 +85,45 @@ async function initDashboard(forceReprocess = false) {
   }
 }
 
-function populatePeriodDropdown(elemId, periods) {
-  const elem = document.getElementById(elemId);
+function populateYearDropdown(periods) {
+  const elem = document.getElementById("filter-year-global");
   const currentVal = elem.value;
-  elem.innerHTML = "";
+  elem.innerHTML = '<option value="">Semua Tahun</option>';
 
-  const optAll = document.createElement("option");
-  optAll.value = "";
-  optAll.innerText = "Semua Periode (2025 & 2026 YTD)";
-  elem.appendChild(optAll);
-
-  const yearMap = {};
-  periods.forEach(p => {
-    const y = p.split("-")[0];
-    if (!yearMap[y]) yearMap[y] = [];
-    yearMap[y].push(p);
-  });
-
-  const sortedYears = Object.keys(yearMap).sort();
-
-  const ogYear = document.createElement("optgroup");
-  ogYear.label = "📊 RINGKASAN TAHUNAN";
-  sortedYears.forEach(y => {
+  const years = Array.from(new Set(periods.map(p => p.split("-")[0]))).sort();
+  years.forEach(y => {
     const opt = document.createElement("option");
     opt.value = y;
-    opt.innerText = `Full Year ${y} (YTD ${y})`;
-    ogYear.appendChild(opt);
-  });
-  elem.appendChild(ogYear);
-
-  sortedYears.forEach(y => {
-    const og = document.createElement("optgroup");
-    og.label = `📅 PERIODE BULANAN TAHUN ${y}`;
-    yearMap[y].forEach(p => {
-      const opt = document.createElement("option");
-      opt.value = p;
-      opt.innerText = p;
-      og.appendChild(opt);
-    });
-    elem.appendChild(og);
+    opt.innerText = `Tahun ${y}`;
+    elem.appendChild(opt);
   });
 
-  if (currentVal) {
-    elem.value = currentVal;
+  elem.value = currentVal;
+}
+
+function updatePeriodOptions() {
+  const yearVal = document.getElementById("filter-year-global").value;
+  const periodElem = document.getElementById("filter-period-global");
+  const currentPeriod = periodElem.value;
+
+  periodElem.innerHTML = "";
+  const optDefault = document.createElement("option");
+  optDefault.value = "";
+  optDefault.innerText = yearVal ? `Semua Bulan (YTD ${yearVal})` : "Semua Bulan (YTD)";
+  periodElem.appendChild(optDefault);
+
+  const filteredPeriods = yearVal ? availablePeriods.filter(p => p.startsWith(yearVal + "-")) : availablePeriods;
+  filteredPeriods.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p;
+    opt.innerText = p;
+    periodElem.appendChild(opt);
+  });
+
+  if (currentPeriod && Array.from(periodElem.options).some(o => o.value === currentPeriod)) {
+    periodElem.value = currentPeriod;
+  } else {
+    periodElem.value = "";
   }
 }
 
@@ -148,17 +153,28 @@ function getAccColor(val, defaultLowColor = 'var(--accent-rose)') {
   return val > 50 ? 'var(--accent-emerald)' : defaultLowColor;
 }
 
+function getFilterQueryParams() {
+  const selectedYear = document.getElementById("filter-year-global").value;
+  const selectedPeriod = document.getElementById("filter-period-global").value;
+  const selectedGB = document.getElementById("filter-gb-global").value;
+
+  let query = "";
+  if (selectedPeriod) {
+    query += `periode=${encodeURIComponent(selectedPeriod)}&`;
+  } else if (selectedYear) {
+    query += `tahun=${encodeURIComponent(selectedYear)}&`;
+  }
+  if (selectedGB) {
+    query += `gb=${encodeURIComponent(selectedGB)}&`;
+  }
+  return query;
+}
+
 // 1. Load Executive Summary
 async function loadSummary() {
   try {
-    const selectedPeriod = document.getElementById("filter-period-global").value;
-    const selectedGB = document.getElementById("filter-gb-global").value;
-
-    let url = `${API_BASE}/summary?`;
-    if (selectedPeriod) url += `periode=${encodeURIComponent(selectedPeriod)}&`;
-    if (selectedGB) url += `gb=${encodeURIComponent(selectedGB)}&`;
-
-    const res = await fetch(url);
+    const query = getFilterQueryParams();
+    const res = await fetch(`${API_BASE}/summary?${query}`);
     const json = await res.json();
     if (json.status === "success") {
       const s = json.data;
@@ -182,13 +198,9 @@ async function loadSummary() {
 // 2. Load Matrix 4-Kuadran atau 2-Kartu Nasional (Pareto Per GB atau Nasional)
 async function loadMatrix() {
   try {
-    const selectedPeriod = document.getElementById("filter-period-global").value;
+    const query = getFilterQueryParams();
     const selectedGB = document.getElementById("filter-gb-global").value;
-    let url = `${API_BASE}/matrix?`;
-    if (selectedPeriod) url += `periode=${encodeURIComponent(selectedPeriod)}&`;
-    if (selectedGB) url += `gb=${encodeURIComponent(selectedGB)}&`;
-
-    const res = await fetch(url);
+    const res = await fetch(`${API_BASE}/matrix?${query}`);
     const json = await res.json();
     if (json.status === "success") {
       const m = json.data;
@@ -442,11 +454,15 @@ function filterAndRenderSKUs() {
   const query = document.getElementById("search-sku").value.toLowerCase().trim();
   const quadFilter = document.getElementById("filter-quadrant").value;
   const gbFilter = document.getElementById("filter-gb-global").value;
+  const selectedYear = document.getElementById("filter-year-global").value;
   const selectedPeriod = document.getElementById("filter-period-global").value;
   let filtered = allSKUs;
 
   if (selectedPeriod) {
     filtered = filtered.filter(s => s.periods && s.periods[selectedPeriod] && (s.periods[selectedPeriod].rf_qty || 0) > 0);
+  } else if (selectedYear) {
+    const prefix = selectedYear + "-";
+    filtered = filtered.filter(s => s.periods && Object.keys(s.periods).some(p => p.startsWith(prefix) && (s.periods[p].rf_qty || 0) > 0));
   } else {
     filtered = filtered.filter(s => (s.total_rf_qty || 0) > 0);
   }
@@ -489,6 +505,17 @@ function filterAndRenderSKUs() {
       errQty = p.error_qty;
       errVal = p.error_val;
       mapeVal = p.mape;
+    } else if (selectedYear && sku.periods) {
+      const prefix = selectedYear + "-";
+      const matching = Object.keys(sku.periods).filter(p => p.startsWith(prefix)).map(p => sku.periods[p]);
+      if (matching.length > 0) {
+        actQty = matching.reduce((sum, p) => sum + (p.act_qty || 0), 0);
+        rfQty = matching.reduce((sum, p) => sum + (p.rf_qty || 0), 0);
+        errQty = matching.reduce((sum, p) => sum + (p.error_qty || 0), 0);
+        errVal = matching.reduce((sum, p) => sum + (p.error_val || 0), 0);
+        const mapes = matching.map(p => p.mape).filter(m => m !== null && m !== undefined);
+        mapeVal = mapes.length > 0 ? (mapes.reduce((a, b) => a + b, 0) / mapes.length) : null;
+      }
     }
 
     const mapeText = mapeVal !== null && mapeVal !== undefined ? `${mapeVal}%` : '-';

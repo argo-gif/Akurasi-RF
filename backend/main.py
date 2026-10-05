@@ -134,8 +134,10 @@ class APIRequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps(res).encode("utf-8"))
 
             elif path == "/api/summary":
-                # Support period & gb filtering for summary
+                # Support period, year & gb filtering for summary
                 selected_period = query_params.get("periode", [None])[0]
+                selected_year = query_params.get("tahun", [None])[0]
+                effective_period = selected_period if selected_period else selected_year
                 selected_gb = query_params.get("gb", [None])[0]
 
                 skus = payload["skus"]
@@ -150,7 +152,7 @@ class APIRequestHandler(BaseHTTPRequestHandler):
                 valid_sku_count = 0
 
                 for s in skus:
-                    p_data = extract_sku_period_data(s, selected_period)
+                    p_data = extract_sku_period_data(s, effective_period)
                     if not p_data:
                         continue
 
@@ -195,6 +197,8 @@ class APIRequestHandler(BaseHTTPRequestHandler):
 
             elif path == "/api/matrix":
                 selected_period = query_params.get("periode", [None])[0]
+                selected_year = query_params.get("tahun", [None])[0]
+                effective_period = selected_period if selected_period else selected_year
                 selected_gb = query_params.get("gb", [None])[0]
                 skus = payload["skus"]
                 if selected_gb:
@@ -214,7 +218,7 @@ class APIRequestHandler(BaseHTTPRequestHandler):
                     mape_list = []
 
                     for s in q_skus:
-                        p_data = extract_sku_period_data(s, selected_period)
+                        p_data = extract_sku_period_data(s, effective_period)
                         if not p_data:
                             continue
 
@@ -309,6 +313,8 @@ class APIRequestHandler(BaseHTTPRequestHandler):
 
             elif path == "/api/skus":
                 selected_period = query_params.get("periode", [None])[0]
+                selected_year = query_params.get("tahun", [None])[0]
+                effective_period = selected_period if selected_period else selected_year
                 quadrant_filter = query_params.get("quadrant", [None])[0]
                 gb_filter = query_params.get("gb", [None])[0]
                 search_query = query_params.get("search", [None])[0]
@@ -317,7 +323,7 @@ class APIRequestHandler(BaseHTTPRequestHandler):
                 skus = payload["skus"]
                 res_skus = []
                 for s in skus:
-                    p_data = extract_sku_period_data(s, selected_period)
+                    p_data = extract_sku_period_data(s, effective_period)
                     if not p_data:
                         continue
 
