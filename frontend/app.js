@@ -471,7 +471,7 @@ function filterAndRenderSKUs() {
   tbody.innerHTML = "";
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color: var(--text-muted);">Tidak ada SKU yang cocok.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; color: var(--text-muted);">Tidak ada SKU yang cocok.</td></tr>`;
     return;
   }
 
@@ -509,7 +509,6 @@ function filterAndRenderSKUs() {
         <td>${sku.product_name}</td>
         <td><span class="quad-badge badge-gray">${sku.gb}</span></td>
         <td><span class="quad-badge badge-blue">${sku.quadrant || 'N/A'}</span></td>
-        <td class="text-right">${formatRp(sku.base_price)}</td>
         <td class="text-right">${formatQty(actQty)}</td>
         <td class="text-right">${formatQty(rfQty)}</td>
         <td class="text-right">${formatQty(errQty)}</td>
