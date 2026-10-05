@@ -518,11 +518,11 @@ function filterAndRenderSKUs() {
       }
     }
 
-    const mapeText = mapeVal !== null && mapeVal !== undefined ? `${mapeVal}%` : '-';
+    const mapeText = (mapeVal !== null && mapeVal !== undefined && !isNaN(mapeVal)) ? `${parseFloat(mapeVal).toFixed(2)}%` : '-';
     let mapeAccText = '-';
     let accStyle = '';
-    if (mapeVal !== null && mapeVal !== undefined) {
-      let rawAcc = 100.0 - mapeVal;
+    if (mapeVal !== null && mapeVal !== undefined && !isNaN(mapeVal)) {
+      let rawAcc = 100.0 - parseFloat(mapeVal);
       let acc = (rawAcc > 100 || rawAcc < 0) ? 0 : rawAcc;
       mapeAccText = `${acc.toFixed(2)}%`;
       if (acc >= 75) accStyle = 'color: var(--accent-cyan); font-weight: 600;';
